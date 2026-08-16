@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#080a09" />
+  <title>CURSED FACTORY // Night Shift</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700;800&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main id="game-shell">
+    <canvas id="game" width="480" height="270" aria-label="First person 3D horror game"></canvas>
+    <div id="noise"></div>
+    <div id="vignette"></div>
+
+    <section id="menu" class="screen visible">
+      <div class="menu-shade"></div>
+      <div class="brand">
+        <p class="eyebrow"><span></span> ANOMALY FILE 06-B</p>
+        <h1>CURSED<br><em>FACTORY</em></h1>
+        <p class="tagline">THE NIGHT SHIFT NEVER ENDS.</p>
+        <button id="start-btn" class="primary">CLOCK IN <span>→</span></button>
+        <button id="how-btn" class="text-btn">HOW TO SURVIVE</button>
+      </div>
+      <div class="case-note">
+        <p>FALLOW INDUSTRIAL WORKS</p>
+        <strong>02:17 AM</strong>
+        <small>Personnel present: <b>1</b></small>
+      </div>
+      <p class="credits">HEADPHONES RECOMMENDED · A SHORT HORROR EXPERIENCE</p>
+    </section>
+
+    <section id="briefing" class="screen">
+      <div class="brief-card">
+        <p class="eyebrow">SHIFT REPORT // UNSENT</p>
+        <h2>The doors sealed when the line went dark.</h2>
+        <p>Restore power. Find the foreman's keycard. Get to the north security gate.</p>
+        <div class="controls-grid">
+          <div><kbd>WASD</kbd><span>MOVE</span></div>
+          <div><kbd>MOUSE</kbd><span>LOOK</span></div>
+          <div><kbd>SHIFT</kbd><span>RUN</span></div>
+          <div><kbd>E</kbd><span>INTERACT</span></div>
+          <div><kbd>F</kbd><span>FLASHLIGHT</span></div>
+          <div><kbd>ESC</kbd><span>RELEASE MOUSE</span></div>
+        </div>
+        <p class="warning">IT HUNTS SOUND. RUN ONLY WHEN YOU MUST.</p>
+        <button id="enter-btn" class="primary">ENTER THE FACTORY <span>→</span></button>
+      </div>
+    </section>
+
+    <section id="how" class="screen">
+      <div class="brief-card compact">
+        <button id="how-close" class="close" aria-label="Close">×</button>
+        <p class="eyebrow">SURVIVAL PROTOCOL</p>
+        <h2>Keep moving. Keep quiet.</h2>
+        <ol>
+          <li><b>SEARCH</b><span>Important objects glint in the dark. Get close and press E.</span></li>
+          <li><b>LISTEN</b><span>The Geared Man's breathing gets louder as he approaches.</span></li>
+          <li><b>CONSERVE</b><span>Your flashlight and stamina both recover, but slowly.</span></li>
+        </ol>
+      </div>
+    </section>
+
+    <section id="pause" class="screen">
+      <div class="pause-card">
+        <p class="eyebrow">SHIFT INTERRUPTED</p>
+        <h2>PAUSED</h2>
+        <p>Click to return to the factory.</p>
+        <button id="resume-btn" class="primary">CONTINUE</button>
+      </div>
+    </section>
+
+    <section id="keypad" class="screen">
+      <div class="keypad-box">
+        <p>MAIN LINE BREAKER</p>
+        <div id="keypad-display">_ _ _</div>
+        <div class="keys" id="keys"></div>
+        <small>MAINTENANCE SEQUENCE REQUIRED</small>
+      </div>
+    </section>
+
+    <section id="ending" class="screen">
+      <div class="end-card">
+        <p class="eyebrow" id="end-label">SHIFT COMPLETE</p>
+        <h2 id="end-title">YOU GOT OUT.</h2>
+        <p id="end-copy">Behind you, the assembly line starts again.</p>
+        <div class="stats"><span>TIME <b id="stat-time">00:00</b></span><span>SECRETS <b id="stat-secrets">0 / 3</b></span></div>
+        <button id="restart-btn" class="primary">CLOCK IN AGAIN</button>
+      </div>
+    </section>
+
+    <div id="hud" aria-live="polite">
+      <div class="topline"><span>FALLOW INDUSTRIAL</span><b id="location">RECEIVING</b><time id="clock">02:17:00</time></div>
+      <div id="objective"><small>CURRENT OBJECTIVE</small><p id="objective-text">Find a replacement line fuse</p></div>
+      <div id="inventory">
+        <div id="inv-fuse"><span class="inv-icon">ϟ</span><small>LINE FUSE</small></div>
+        <div id="inv-card"><span class="inv-icon">▣</span><small>KEYCARD</small></div>
+      </div>
+      <div id="status">
+        <label>STAMINA <span id="stamina-value">100</span></label><div class="meter"><i id="stamina-bar"></i></div>
+        <label>FLASHLIGHT <span id="battery-value">100</span></label><div class="meter battery"><i id="battery-bar"></i></div>
+      </div>
+      <div id="crosshair"><i></i><i></i></div>
+      <div id="interact">[ E ] <span>INTERACT</span></div>
+      <div id="message"></div>
+      <div id="threat"><span>DO NOT MOVE</span></div>
+    </div>
+    <div id="damage"></div>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>
