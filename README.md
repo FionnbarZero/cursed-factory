@@ -1,6 +1,16 @@
 # Cursed Factory
 
-A self-contained first-person 3D browser horror game. Escape Fallow Industrial Works by finding the line fuse, restoring power, recovering the foreman's keycard, and surviving the creature patrolling the factory.
+A self-contained first-person 3D browser horror game. Escape Fallow Industrial Works by restoring power, calibrating the steam manifold, restarting the production line, recovering the foreman's keycard, and surviving the creatures patrolling the factory.
+
+## Features
+
+- Three monster types with grid-based pursuit and different silhouettes
+- Two factory workers who flee from—and can be killed by—the monsters
+- Breaker-code, steam-pressure, and production-order puzzles
+- Interactive alarms, supply lockers, hydraulic presses, control panels, and notes
+- Conveyors, boilers, robot arms, ventilation fans, pipes, barrels, pallets, crates, steam, and industrial machinery
+- High-resolution ray-cast rendering with procedural material textures, dynamic flashlight lighting, fog, dust, reflections, and camera movement
+- Optional secrets, worker-survival statistics, flashlight management, and synthesized positional threat cues
 
 ## Run
 

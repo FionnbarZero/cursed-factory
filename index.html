@@ -12,7 +12,7 @@
 </head>
 <body>
   <main id="game-shell">
-    <canvas id="game" width="480" height="270" aria-label="First person 3D horror game"></canvas>
+    <canvas id="game" width="800" height="450" aria-label="First person 3D horror game"></canvas>
     <div id="noise"></div>
     <div id="vignette"></div>
 
@@ -82,12 +82,43 @@
       </div>
     </section>
 
+    <section id="pressure" class="screen puzzle-screen">
+      <div class="puzzle-box">
+        <p class="panel-kicker">STEAM MANIFOLD // MANUAL CALIBRATION</p>
+        <h2>EQUALIZE PRESSURE</h2>
+        <p class="panel-help">Set each line to the values recorded on the pressure chart.</p>
+        <div class="pressure-dials">
+          <button class="pressure-dial" data-pressure="0"><i></i><b>0</b><span>INTAKE</span></button>
+          <button class="pressure-dial" data-pressure="1"><i></i><b>0</b><span>PRESS</span></button>
+          <button class="pressure-dial" data-pressure="2"><i></i><b>0</b><span>EXHAUST</span></button>
+        </div>
+        <button id="pressure-submit" class="panel-submit">OPEN MANIFOLD</button>
+        <button class="panel-close" data-close-puzzle>DISENGAGE</button>
+      </div>
+    </section>
+
+    <section id="conveyor" class="screen puzzle-screen">
+      <div class="puzzle-box conveyor-box">
+        <p class="panel-kicker">PRODUCTION LINE // COLD START</p>
+        <h2>START THE LINE</h2>
+        <p class="panel-help">Safety order: material enters at <b>FEED</b>, passes through <b>PRESS</b>, then exits at <b>PACK</b>.</p>
+        <div id="sequence-display"><i></i><i></i><i></i></div>
+        <div class="line-buttons">
+          <button data-line="1"><strong>01</strong><span>PRESS</span></button>
+          <button data-line="2"><strong>02</strong><span>FEED</span></button>
+          <button data-line="3"><strong>03</strong><span>PACK</span></button>
+        </div>
+        <p id="line-status">AWAITING START SEQUENCE</p>
+        <button class="panel-close" data-close-puzzle>STEP AWAY</button>
+      </div>
+    </section>
+
     <section id="ending" class="screen">
       <div class="end-card">
         <p class="eyebrow" id="end-label">SHIFT COMPLETE</p>
         <h2 id="end-title">YOU GOT OUT.</h2>
         <p id="end-copy">Behind you, the assembly line starts again.</p>
-        <div class="stats"><span>TIME <b id="stat-time">00:00</b></span><span>SECRETS <b id="stat-secrets">0 / 3</b></span></div>
+        <div class="stats"><span>TIME <b id="stat-time">00:00</b></span><span>SECRETS <b id="stat-secrets">0 / 3</b></span><span>WORKERS LOST <b id="stat-deaths">0 / 2</b></span></div>
         <button id="restart-btn" class="primary">CLOCK IN AGAIN</button>
       </div>
     </section>
