@@ -13,7 +13,8 @@
 </head>
 <body>
   <main id="game-shell">
-    <canvas id="game" width="800" height="450" aria-label="First person 3D horror game"></canvas>
+    <canvas id="game" width="800" height="450" aria-label="Top-down 2D horror game"></canvas>
+    <canvas id="babylon-game" aria-label="Babylon.js first-person 3D factory"></canvas>
     <div id="noise"></div>
     <div id="vignette"></div>
 
@@ -38,14 +39,17 @@
       <div class="brief-card">
         <p class="eyebrow">SHIFT REPORT // UNSENT</p>
         <h2>The doors sealed when the line went dark.</h2>
-        <p>Restore power. Find the foreman's keycard. Get to the north security gate.</p>
+        <p>Restore both factory levels. Find the foreman's keycard. Get to the north security gate.</p>
         <div class="controls-grid">
           <div><kbd>WASD</kbd><span>MOVE</span></div>
-          <div><kbd>MOUSE</kbd><span>LOOK</span></div>
+          <div><kbd>MOUSE</kbd><span>AIM LIGHT</span></div>
           <div><kbd>SHIFT</kbd><span>RUN</span></div>
-          <div><kbd>E</kbd><span>INTERACT</span></div>
+          <div><kbd>SPACE</kbd><span>JUMP</span></div>
+          <div><kbd>C / CTRL</kbd><span>CROUCH</span></div>
+          <div><kbd>E / L</kbd><span>INTERACT / LOCK DOOR</span></div>
           <div><kbd>F</kbd><span>FLASHLIGHT</span></div>
-          <div><kbd>ESC</kbd><span>RELEASE MOUSE</span></div>
+          <div><kbd>V</kbd><span>SWITCH 2D / 3D</span></div>
+          <div><kbd>ESC</kbd><span>PAUSE</span></div>
         </div>
         <p class="warning">IT HUNTS SOUND. RUN ONLY WHEN YOU MUST.</p>
         <button id="enter-btn" class="primary">ENTER THE FACTORY <span>→</span></button>
@@ -60,6 +64,8 @@
         <ol>
           <li><b>SEARCH</b><span>Important objects glint in the dark. Get close and press E.</span></li>
           <li><b>LISTEN</b><span>The Geared Man's breathing gets louder as he approaches.</span></li>
+          <li><b>HIDE</b><span>Close a safe-room door with E, then lock it from inside with L.</span></li>
+          <li><b>TRAVEL</b><span>Use the west stair or powered freight elevator to move between factory levels.</span></li>
           <li><b>CONSERVE</b><span>Your flashlight and stamina both recover, but slowly.</span></li>
         </ol>
       </div>
@@ -114,18 +120,49 @@
       </div>
     </section>
 
+    <section id="ventilation" class="screen puzzle-screen">
+      <div class="puzzle-box">
+        <p class="panel-kicker">LEVEL 2 VENTILATION // DAMPER CALIBRATION</p>
+        <h2>BALANCE AIRFLOW</h2>
+        <p class="panel-help">Set each damper to the values recorded on the upper air-balance chart.</p>
+        <div class="pressure-dials">
+          <button class="pressure-dial vent-dial" data-vent="0"><i></i><b>0</b><span>INTAKE</span></button>
+          <button class="pressure-dial vent-dial" data-vent="1"><i></i><b>0</b><span>SCRUBBER</span></button>
+          <button class="pressure-dial vent-dial" data-vent="2"><i></i><b>0</b><span>EXHAUST</span></button>
+        </div>
+        <button id="ventilation-submit" class="panel-submit">LOCK DAMPERS</button>
+        <button class="panel-close" data-close-puzzle>DISENGAGE</button>
+      </div>
+    </section>
+
+    <section id="crane" class="screen puzzle-screen">
+      <div class="puzzle-box conveyor-box">
+        <p class="panel-kicker">LEVEL 2 OVERHEAD CRANE // PARKING CYCLE</p>
+        <h2>PARK THE CRANE</h2>
+        <p class="panel-help">Follow the crane start card. Complete the three operations in its recorded order.</p>
+        <div id="crane-sequence"><i></i><i></i><i></i></div>
+        <div class="line-buttons crane-buttons">
+          <button data-crane="1"><strong>01</strong><span>TROLLEY</span></button>
+          <button data-crane="2"><strong>02</strong><span>MAGNET</span></button>
+          <button data-crane="3"><strong>03</strong><span>HOIST</span></button>
+        </div>
+        <p id="crane-status">AWAITING PARK SEQUENCE</p>
+        <button class="panel-close" data-close-puzzle>STEP AWAY</button>
+      </div>
+    </section>
+
     <section id="ending" class="screen">
       <div class="end-card">
         <p class="eyebrow" id="end-label">SHIFT COMPLETE</p>
         <h2 id="end-title">YOU GOT OUT.</h2>
         <p id="end-copy">Behind you, the assembly line starts again.</p>
-        <div class="stats"><span>TIME <b id="stat-time">00:00</b></span><span>SECRETS <b id="stat-secrets">0 / 3</b></span><span>WORKERS LOST <b id="stat-deaths">0 / 2</b></span></div>
+        <div class="stats"><span>TIME <b id="stat-time">00:00</b></span><span>SECRETS <b id="stat-secrets">0 / 4</b></span><span>WORKERS LOST <b id="stat-deaths">0 / 3</b></span></div>
         <button id="restart-btn" class="primary">CLOCK IN AGAIN</button>
       </div>
     </section>
 
     <div id="hud" aria-live="polite">
-      <div class="topline"><span>FALLOW INDUSTRIAL</span><b id="location">RECEIVING</b><time id="clock">02:17:00</time></div>
+      <div class="topline"><span>FALLOW INDUSTRIAL</span><b id="location">RECEIVING</b><button id="view-toggle">2D VIEW · [V]</button><time id="clock">02:17:00</time></div>
       <div id="objective"><small>CURRENT OBJECTIVE</small><p id="objective-text">Find a replacement line fuse</p></div>
       <div id="inventory">
         <div id="inv-fuse"><span class="inv-icon">ϟ</span><small>LINE FUSE</small></div>
@@ -134,14 +171,18 @@
       <div id="status">
         <label>STAMINA <span id="stamina-value">100</span></label><div class="meter"><i id="stamina-bar"></i></div>
         <label>FLASHLIGHT <span id="battery-value">100</span></label><div class="meter battery"><i id="battery-bar"></i></div>
+        <output id="stance">STANDING</output>
       </div>
       <div id="crosshair"><i></i><i></i></div>
-      <div id="interact">[ E ] <span>INTERACT</span></div>
+      <div id="interact"><b id="interact-key">[ E ]</b> <span>INTERACT</span></div>
       <div id="message"></div>
       <div id="threat"><span>DO NOT MOVE</span></div>
     </div>
     <div id="damage"></div>
   </main>
+  <script src="factory-collision.js"></script>
+  <script src="vendor/babylon.js"></script>
+  <script src="babylon-machinery.js"></script>
   <script src="game.js"></script>
 </body>
 </html>
