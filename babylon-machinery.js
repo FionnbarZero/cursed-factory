@@ -7,7 +7,7 @@
   const v = (x = 0, y = 0, z = 0) => new B.Vector3(x, y, z);
   const color = hex => B.Color3.FromHexString(hex);
 
-  function createFactoryView({ canvas, maps, connectors, scenery, machineryColliders = [], obstacles, doors, objects, monsters, workers, getState, getPlayer }) {
+  function createFactoryView({ canvas, maps, connectors, scenery, machineryColliders = [], obstacles, doors, objects, monsters, workers, industrialLights = [], getState, getPlayer }) {
     let engine;
     try {
       engine = new B.Engine(canvas, true, { preserveDrawingBuffer: true, stencil: true });
@@ -52,6 +52,7 @@
       seam: material('recessed floor seam', '#242a26', { specular: '#303630' }),
       wall: material('riveted steel', '#333b37', { specular: '#4e554d' }),
       wallAlt: material('oxidized steel', '#3d3025', { specular: '#33271f' }),
+      beam: material('structural beam', '#252b28', { specular: '#59625b' }),
       machine: material('machine enamel', '#29332f', { specular: '#687069' }),
       machineDark: material('machine recess', '#0c100e'),
       steel: material('bare steel', '#626a64', { specular: '#959d94' }),
@@ -104,6 +105,20 @@
     };
     const indicator = (parent, x, y, z, mat = mats.red, diameter = .055) => sphere('indicator', diameter, v(x, y, z), mat, parent);
 
+    function createStructuralDetails(floor) {
+      const base = floorY(floor);
+      for (const z of [2.5, 8.5, 14.5]) for (const x of [2.5, 7.5, 14.5, 19.5]) {
+        const tile = maps[floor][Math.floor(z)]?.[Math.floor(x)];
+        if (!tile || tile === '1' || tile === '2') continue;
+        box(`steel column ${floor}-${x}-${z}`, { width: .16, height: 3.05, depth: .16 }, v(worldX(x), base + 1.52, worldZ(z)), mats.beam);
+        box(`column foot ${floor}-${x}-${z}`, { width: .3, height: .08, depth: .3 }, v(worldX(x), base + .04, worldZ(z)), mats.steel);
+      }
+      for (const z of [4.5, 10.5, 16]) {
+        box(`ceiling girder ${floor}-${z}`, { width: worldWidth - .35, height: .14, depth: .18 }, v(worldWidth / 2, base + 3.02, worldZ(z)), mats.beam);
+        for (const x of [4, 10, 16]) box(`girder brace ${floor}-${z}-${x}`, { width: .08, height: .48, depth: .08 }, v(worldX(x), base + 2.78, worldZ(z)), mats.steel);
+      }
+    }
+
     for (let floor = 0; floor < maps.length; floor++) {
       const base = floorY(floor);
       const ground = B.MeshBuilder.CreateGround(`factory floor L${floor + 1}`, { width: worldWidth, height: worldHeight, subdivisions: Math.max(worldWidth, worldHeight) }, scene);
@@ -113,6 +128,7 @@
       box(`factory ceiling L${floor + 1}`, { width: worldWidth, height: .12, depth: worldHeight }, v(worldWidth / 2, base + 3.22, worldHeight / 2), mats.machineDark);
       for (let i = 1; i < mapWidth; i++) box(`floor seam x ${floor}-${i}`, { width: .009, height: .006, depth: worldHeight }, v(worldX(i), base + .006, worldHeight / 2), mats.seam);
       for (let i = 1; i < mapHeight; i++) box(`floor seam z ${floor}-${i}`, { width: worldWidth, height: .006, depth: .009 }, v(worldWidth / 2, base + .006, worldZ(i)), mats.seam);
+      createStructuralDetails(floor);
     }
 
     const ambient = new B.HemisphericLight('cold ambient', v(0, 1, 0), scene);
@@ -133,6 +149,16 @@
       lamp.intensity = .34;
       cylinder('lamp cage', { height: .22, diameter: .14, tessellation: 8 }, v(x, floorY(floor) + 2.76, z), mats.red).rotation.z = Math.PI / 2;
     }
+
+    const warmLights = industrialLights.map((lamp, index) => {
+      const light = new B.PointLight(`warm industrial light ${index}`, v(worldX(lamp.x), floorY(lamp.floor) + 2.55, worldZ(lamp.y)), scene);
+      light.diffuse = color('#c99558');
+      light.specular = color('#8f653c');
+      light.range = (lamp.radius + .55) * CELL_SPACING;
+      light.intensity = .22;
+      cylinder(`warm lamp fixture ${index}`, { height: .08, diameter: .16, tessellation: 8 }, v(worldX(lamp.x), floorY(lamp.floor) + 2.78, worldZ(lamp.y)), mats.yellow);
+      return light;
+    });
 
     const rotors = [];
     const pressHeads = [];
@@ -197,6 +223,15 @@
       pipe.rotation.z = Math.PI / 2;
       for (let x = x1; x <= x2; x += 2) cylinder('pipe collar', { height: .09, diameter: .2, tessellation: 10 }, v(worldX(x), floorY(floor) + 2.68, worldZ(z)), mats.steel).rotation.z = Math.PI / 2;
     }
+
+    const craneY = floorY(1) + 2.88;
+    box('upper overhead crane runway', { width: worldWidth - 2.4, height: .16, depth: .2 }, v(worldWidth / 2, craneY, worldZ(8.35)), mats.yellow);
+    for (const z of [7.86, 8.84]) box('overhead crane rail', { width: worldWidth - 2.8, height: .07, depth: .07 }, v(worldWidth / 2, craneY - .16, worldZ(z)), mats.steel);
+    const trolley = box('overhead crane trolley', { width: .62, height: .2, depth: .7 }, v(worldX(11.3), craneY - .18, worldZ(8.35)), mats.yellow);
+    trolley.metadata = { craneTrolley: true };
+    cylinder('overhead crane cable', { height: 1.55, diameter: .035, tessellation: 8 }, v(worldX(11.3), craneY - .98, worldZ(8.35)), mats.rubber);
+    const craneHook = B.MeshBuilder.CreateTorus('overhead crane hook', { diameter: .34, thickness: .065, tessellation: 14, arc: .72 }, scene);
+    craneHook.position.set(worldX(11.3), craneY - 1.78, worldZ(8.35)); craneHook.material = mats.rust;
 
     const stairConnector = connectors.find(c => c.type === 'stairs');
     if (stairConnector) {
@@ -428,6 +463,7 @@
       flashlight.direction.set(Math.cos(player.a), -.045, Math.sin(player.a));
       flashlight.intensity = state.flash && state.battery > 0 ? 3.8 : 0;
       ambient.intensity = state.power ? .3 : .16;
+      for (const light of warmLights) light.intensity = state.power ? .24 : .16;
 
       for (const d of doors) {
         const view = doorViews.get(d.id);if (!view) continue;
