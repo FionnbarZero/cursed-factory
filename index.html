@@ -20,6 +20,7 @@
 
     <section id="menu" class="screen visible">
       <div class="menu-shade"></div>
+      <div class="menu-grid" aria-hidden="true"></div>
       <div class="brand">
         <p class="eyebrow"><span></span> ANOMALY FILE 06-B</p>
         <h1>CURSED<br><em>FACTORY</em></h1>
@@ -27,6 +28,14 @@
         <button id="start-btn" class="primary">CLOCK IN <span>→</span></button>
         <button id="how-btn" class="text-btn">HOW TO SURVIVE</button>
       </div>
+      <aside class="menu-status" aria-label="Factory status">
+        <div class="status-head"><span class="status-lamp"></span> LIVE FACILITY FEED <b>06-B</b></div>
+        <div class="status-line"><span>MAIN POWER</span><strong class="offline">OFFLINE</strong></div>
+        <div class="status-line"><span>PRODUCTION LEVELS</span><strong>02 / 02</strong></div>
+        <div class="status-line"><span>LAST SIGNAL</span><strong>02:17:04</strong></div>
+        <div class="status-line"><span>BIOMETRICS</span><strong class="warning-text">UNRESOLVED</strong></div>
+        <p class="status-note">FALLOW INDUSTRIAL WORKS<br>AUTHORIZED PERSONNEL ONLY</p>
+      </aside>
       <div class="case-note">
         <p>FALLOW INDUSTRIAL WORKS</p>
         <strong>02:17 AM</strong>
@@ -40,6 +49,14 @@
         <p class="eyebrow">SHIFT REPORT // UNSENT</p>
         <h2>The doors sealed when the line went dark.</h2>
         <p>Restore both factory levels. Find the foreman's keycard. Get to the north security gate.</p>
+        <div class="difficulty-select" aria-label="Choose difficulty">
+          <p>THREAT CALIBRATION</p>
+          <div class="difficulty-options">
+            <button type="button" data-difficulty="recruit"><b>RECRUIT</b><span>SLOWER HUNT</span></button>
+            <button type="button" data-difficulty="standard" class="selected"><b>STANDARD</b><span>INTENDED SHIFT</span></button>
+            <button type="button" data-difficulty="nightmare"><b>NIGHTMARE</b><span>NO ROOM FOR ERROR</span></button>
+          </div>
+        </div>
         <div class="controls-grid">
           <div><kbd>WASD</kbd><span>MOVE</span></div>
           <div><kbd>MOUSE</kbd><span>AIM LIGHT</span></div>
@@ -183,6 +200,8 @@
   <script src="factory-collision.js"></script>
   <script src="vendor/babylon.js"></script>
   <script src="babylon-machinery.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
+  <script src="phaser-2d.js"></script>
   <script src="game.js"></script>
 </body>
 </html>

@@ -70,7 +70,8 @@
     {floor:1,x:0,y:0,w:7,h:9,n:'UPPER LOADING CATWALK'}, {floor:1,x:7,y:0,w:9,h:9,n:'ROBOTICS DECK'}, {floor:1,x:16,y:0,w:6,h:9,n:'CONTROL MEZZANINE'},
     {floor:1,x:0,y:9,w:7,h:9,n:'VENTILATION PLANT'}, {floor:1,x:7,y:9,w:9,h:9,n:'OVERHEAD CRANE BAY'}, {floor:1,x:16,y:9,w:6,h:9,n:'PAINT AND FINISH'}
   ];
-  const state={mode:'menu',viewMode:'2d',start:0,power:false,fuse:false,pressureSolved:false,lineSolved:false,ventilationSolved:false,craneSolved:false,card:false,flash:true,battery:100,stamina:100,secrets:0,deaths:0,code:'',pressure:[0,0,0],ventilation:[0,0,0],lineSequence:[],craneSequence:[],msgTimer:0,step:0,beat:0,machineTimer:2,alarm:0,pressPulse:0,elevatorFloor:0,won:false};
+  const difficultySettings={recruit:{monsterScale:.75,noiseScale:.72,staminaDrain:22,staminaRecover:18,batteryDrain:.95,batteryRecover:1.05},standard:{monsterScale:1,noiseScale:1,staminaDrain:28,staminaRecover:15,batteryDrain:1.3,batteryRecover:.85},nightmare:{monsterScale:1.28,noiseScale:1.22,staminaDrain:34,staminaRecover:12,batteryDrain:1.7,batteryRecover:.62}};
+  const state={mode:'menu',viewMode:'2d',difficulty:'standard',start:0,power:false,fuse:false,pressureSolved:false,lineSolved:false,ventilationSolved:false,craneSolved:false,card:false,flash:true,battery:100,stamina:100,secrets:0,deaths:0,code:'',pressure:[0,0,0],ventilation:[0,0,0],lineSequence:[],craneSequence:[],msgTimer:0,step:0,beat:0,machineTimer:2,alarm:0,pressPulse:0,elevatorFloor:0,won:false};
   const player={x:2.5,y:2.5,floor:0,a:0,z:0,jumpVelocity:0,grounded:true,crouched:false,health:100};
   const monsters=[
     {id:'geared',kind:'geared',sx:11.5,sy:15.5,sfloor:0,x:11.5,y:15.5,floor:0,speed:.5,seen:0,pathTimer:0,target:null,active:false,victim:'elias'},
@@ -86,10 +87,12 @@
   const industrialLights=[
     {floor:0,x:1.8,y:7.0,radius:1.35}, {floor:0,x:7.5,y:9.7,radius:1.2},
     {floor:0,x:11.5,y:8.3,radius:1.25}, {floor:0,x:18.8,y:2.6,radius:1.3},
-    {floor:0,x:18.7,y:13.7,radius:1.25},
+    {floor:0,x:18.7,y:13.7,radius:1.25}, {floor:0,x:4.5,y:2.5,radius:1.05},
+    {floor:0,x:3.5,y:14.5,radius:1.05}, {floor:0,x:14.5,y:10.5,radius:1.05},
     {floor:1,x:4.8,y:11.5,radius:1.35}, {floor:1,x:13.5,y:8.4,radius:1.3},
     {floor:1,x:19.2,y:4.8,radius:1.35}, {floor:1,x:4.5,y:2.5,radius:1.15},
-    {floor:1,x:19.5,y:2.5,radius:1.15}
+    {floor:1,x:19.5,y:2.5,radius:1.15}, {floor:1,x:8.5,y:6.5,radius:1.0},
+    {floor:1,x:11.3,y:6.1,radius:1.05}, {floor:1,x:15.5,y:11.5,radius:1.05}
   ];
   const objects=[
     {id:'note',x:5.5,y:1.09,mount:'N',type:'note',label:'READ MAINTENANCE NOTE',active:true},
@@ -163,10 +166,11 @@
   for(const collection of [objects,obstacles,doors,scenery])for(const item of collection)if(item.floor===undefined)item.floor=0;
   const collisionSystem=window.CursedFactoryCollision;
   const machineryColliders=collisionSystem.buildMachineryColliders(scenery);
-  const keys={}; let zBuffer=new Float32Array(W),nearObj=null,last=0,audio=null,walkPhase=0,moveBlend=0,viewBob=0,viewSway=0,cameraX=0,cameraY=0,mouseX=W*.7,mouseY=H*.5,lastObstacleHint=0,babylonView=null;
+  const keys={}; let zBuffer=new Float32Array(W),nearObj=null,last=0,audio=null,walkPhase=0,moveBlend=0,viewBob=0,viewSway=0,cameraX=0,cameraY=0,mouseX=W*.7,mouseY=H*.5,lastObstacleHint=0,babylonView=null,phaserView=null;
 
   function ensureBabylonView(){if(babylonView)return babylonView;const factory=window.CursedFactoryBabylon;if(!factory){babylonView={ready:false,canvas};return babylonView}babylonView=factory.create({canvas:$('#babylon-game'),maps,connectors,scenery,machineryColliders,obstacles,doors,objects,monsters,workers,industrialLights,getState:()=>state,getPlayer:()=>player});if(babylonView.ready)$('#game-shell').classList.add('babylon-ready');return babylonView}
-  function activeCanvas(){return state.viewMode==='3d'&&babylonView?.ready?babylonView.canvas:canvas}
+  function ensurePhaserView(){if(phaserView)return phaserView;const factory=window.CursedFactoryPhaser;if(!factory){phaserView={ready:false,canvas};return phaserView}phaserView=factory.create({host:$('#game-shell'),maps,scenery,obstacles,workers,industrialLights,getState:()=>state,getPlayer:()=>player});if(phaserView.ready)$('#game-shell').classList.add('phaser-ready');return phaserView}
+  function activeCanvas(){if(state.viewMode==='3d'&&babylonView?.ready)return babylonView.canvas;if(state.viewMode==='2d'&&phaserView?.ready)return phaserView.canvas;return canvas}
 
   function doorAtCell(x,y,floor=player.floor){return doors.find(d=>d.floor===floor&&d.x===x&&d.y===y)}
   function wall(x,y,floor=player.floor){const cx=Math.floor(x),cy=Math.floor(y),t=mapFor(floor)[cy]?.[cx];return !t||t==='1'||t==='2'||(t==='D'&&!doorAtCell(cx,cy,floor)?.open)||(t==='B'&&!state.power)||(t==='E'&&!state.won)}
@@ -405,9 +409,9 @@
   function update(dt){
     if(state.mode!=='play')return;
     player.crouched=Boolean((keys.KeyC||keys.ControlLeft||keys.ControlRight)&&player.grounded);
-    const forward=(keys.KeyW?1:0)-(keys.KeyS?1:0),strafe=(keys.KeyD?1:0)-(keys.KeyA?1:0),running=keys.ShiftLeft&&forward>0&&state.stamina>1&&!player.crouched;
+    const difficulty=difficultySettings[state.difficulty],forward=(keys.KeyW?1:0)-(keys.KeyS?1:0),strafe=(keys.KeyD?1:0)-(keys.KeyA?1:0),running=keys.ShiftLeft&&forward>0&&state.stamina>1&&!player.crouched;
     const speed=(running?3.1:player.crouched?1.05:1.65)*dt;
-    if(running)state.stamina=Math.max(0,state.stamina-28*dt);else state.stamina=Math.min(100,state.stamina+15*dt);
+    if(running)state.stamina=Math.max(0,state.stamina-difficulty.staminaDrain*dt);else state.stamina=Math.min(100,state.stamina+difficulty.staminaRecover*dt);
     let dx,dy;
     if(state.viewMode==='2d'){dx=strafe*speed;dy=forward*speed*-1}
     else{const rightAngle=player.a+(babylonView?.ready?-Math.PI/2:Math.PI/2);dx=(Math.cos(player.a)*forward+Math.cos(rightAngle)*strafe)*speed;dy=(Math.sin(player.a)*forward+Math.sin(rightAngle)*strafe)*speed}
@@ -421,14 +425,14 @@
     if(player.jumpVelocity<=0&&previousZ>=supportHeight-.035&&player.z<=supportHeight){player.z=supportHeight;player.jumpVelocity=0;player.grounded=true}
     else player.grounded=false;
 
-    if(state.flash)state.battery=Math.max(0,state.battery-1.3*dt);else state.battery=Math.min(100,state.battery+.85*dt);if(state.battery<=0)state.flash=false;
+    if(state.flash)state.battery=Math.max(0,state.battery-difficulty.batteryDrain*dt);else state.battery=Math.min(100,state.battery+difficulty.batteryRecover*dt);if(state.battery<=0)state.flash=false;
     const moving=Math.abs(forward)+Math.abs(strafe)>0;moveBlend+=(Number(moving)-moveBlend)*Math.min(1,dt*9);if(moving)walkPhase+=dt*(running?7.8:player.crouched?3.2:5.3);
     if(state.viewMode==='2d'){const pp=screenPoint(player.x,player.y);player.a=Math.atan2(mouseY-pp.y,mouseX-pp.x);viewBob=0;viewSway=0}
     else{viewBob=Math.sin(walkPhase*2)*3.2*SCALE*moveBlend+player.z*28*SCALE-(player.crouched?18*SCALE:0);viewSway=Math.sin(walkPhase)*2.1*SCALE*moveBlend}
     nearObj=null;let best=1.05;for(const o of objects){if(!o.active||o.floor!==player.floor)continue;const d=Math.hypot(o.x-player.x,o.y-player.y),facing=Math.abs(norm(Math.atan2(o.y-player.y,o.x-player.x)-player.a));if(d<best&&(state.viewMode==='2d'||facing<.75)){best=d;nearObj=o}}$('#interact').style.display=nearObj?'block':'none';if(nearObj){const door=nearObj.type==='door'&&doors.find(d=>d.id===nearObj.doorId);$('#interact-key').textContent=door?'[ E / L ]':'[ E ]';$('#interact span').textContent=door?`${door.name} // ${door.locked?'LOCKED':door.open?'OPEN':'UNLOCKED'}`:nearObj.label}
     for(const w of workers){if(!w.alive)continue;const hunter=monsters.find(m=>m.active&&m.victim===w.id);if(!hunter)continue;w.pathTimer-=dt;if(w.pathTimer<=0){w.target=nextStep(w,{x:w.escapeX,y:w.escapeY,floor:w.escapeFloor});w.pathTimer=.38}moveEntity(w,w.target,w.speed*dt)}
-    let nearest=99;const noise=running?8:state.flash?5:2.7;
-    for(const m of monsters){if(!m.active)continue;const victim=workers.find(w=>w.id===m.victim&&w.alive),prey=victim||player,sameFloor=m.floor===player.floor,md=sameFloor?Math.hypot(player.x-m.x,player.y-m.y):99;if(sameFloor)nearest=Math.min(nearest,md);if(victim||(sameFloor&&md<noise)||m.seen>0||state.alarm>0){m.seen=Math.max(m.seen,2.5);m.pathTimer-=dt;if(m.pathTimer<=0){m.target=nextStep(m,prey);m.pathTimer=m.kind==='crawler'?.18:.28}moveEntity(m,m.target,m.speed*MONSTER_SPEED_SCALE*dt*(running&&!victim?1.15:1))}m.seen=Math.max(0,m.seen-dt);
+    let nearest=99;const noise=(running?8:state.flash?5:2.7)*difficulty.noiseScale;
+    for(const m of monsters){if(!m.active)continue;const victim=workers.find(w=>w.id===m.victim&&w.alive),prey=victim||player,sameFloor=m.floor===player.floor,md=sameFloor?Math.hypot(player.x-m.x,player.y-m.y):99;if(sameFloor)nearest=Math.min(nearest,md);if(victim||(sameFloor&&md<noise)||m.seen>0||state.alarm>0){m.seen=Math.max(m.seen,2.5);m.pathTimer-=dt;if(m.pathTimer<=0){m.target=nextStep(m,prey);m.pathTimer=m.kind==='crawler'?.18:.28}moveEntity(m,m.target,m.speed*MONSTER_SPEED_SCALE*difficulty.monsterScale*dt*(running&&!victim?1.15:1))}m.seen=Math.max(0,m.seen-dt);
       if(victim&&victim.floor===m.floor&&Math.hypot(victim.x-m.x,victim.y-m.y)<.48){victim.alive=false;state.deaths++;m.seen=999;message(`${victim.name} WAS KILLED BY ${m.kind==='crawler'?'THE CRAWLER':m.kind==='overseer'?'THE OVERSEER':'THE GEARED MAN'}`,4200);tone(105,.7,.14,'sawtooth')}
       if(sameFloor&&md<.52){die();break}}
     state.beat-=dt;if(nearest<5&&state.beat<=0){tone(nearest<2.3?62:48,.08,nearest<2.3?.07:.035,'sine');state.beat=Math.max(.28,nearest*.16)}$('#threat').classList.toggle('near',nearest<4);
@@ -445,12 +449,13 @@
     return null;
   }
   function updateHud(){const st=Math.round(state.stamina),ba=Math.round(state.battery);$('#stamina-value').textContent=st;$('#stamina-bar').style.width=st+'%';$('#battery-value').textContent=ba;$('#battery-bar').style.width=ba+'%';$('#stance').textContent=player.crouched?'CROUCHED':!player.grounded?'AIRBORNE':player.z>.08?'ON MACHINERY':'STANDING';$('.meter').classList.toggle('low',st<20);$('.meter.battery').classList.toggle('low',ba<20);const z=zones.find(z=>z.floor===player.floor&&player.x>=z.x&&player.x<z.x+z.w&&player.y>=z.y&&player.y<z.y+z.h);$('#location').textContent=`L${player.floor+1} // ${z?.n||'FACTORY ACCESS'}`;const sec=Math.floor((performance.now()-state.start));const base=(2*3600+17*60)*1000+sec;$('#clock').textContent=new Date(base).toISOString().slice(11,19)}
-  function loop(t){const dt=Math.min(.05,(t-last)/1000||0);last=t;update(dt);if(state.viewMode==='2d')render2D();else{const view=ensureBabylonView();view.ready?view.render():render()}requestAnimationFrame(loop)}
+  function loop(t){const dt=Math.min(.05,(t-last)/1000||0);last=t;update(dt);if(state.viewMode==='2d'){const view=ensurePhaserView();if(!view.ready)render2D()}else{const view=ensureBabylonView();view.ready?view.render():render()}requestAnimationFrame(loop)}
 
   $('#start-btn').onclick=()=>{show('#menu',false);show('#briefing')};$('#enter-btn').onclick=begin;$('#how-btn').onclick=()=>show('#how');$('#how-close').onclick=()=>show('#how',false);$('#resume-btn').onclick=()=>{state.mode='play';show('#pause',false);if(state.viewMode==='3d')activeCanvas().requestPointerLock?.()};$('#restart-btn').onclick=()=>location.reload();$('#view-toggle').onclick=toggleView;
+  document.querySelectorAll('[data-difficulty]').forEach(button=>button.onclick=()=>{state.difficulty=button.dataset.difficulty;document.querySelectorAll('[data-difficulty]').forEach(option=>{option.classList.toggle('selected',option===button);option.setAttribute('aria-pressed',option===button?'true':'false')})});
   const keysEl=$('#keys');[1,2,3,4,5,6,7,8,9,'C',0].forEach(n=>{const b=document.createElement('button');b.textContent=n;b.onclick=()=>codePress(String(n));keysEl.appendChild(b)});
   document.querySelectorAll('.pressure-dial[data-pressure]').forEach(el=>el.onclick=()=>pressurePress(Number(el.dataset.pressure)));$('#pressure-submit').onclick=submitPressure;document.querySelectorAll('.vent-dial').forEach(el=>el.onclick=()=>ventilationPress(Number(el.dataset.vent)));$('#ventilation-submit').onclick=submitVentilation;document.querySelectorAll('[data-line]').forEach(el=>el.onclick=()=>linePress(Number(el.dataset.line)));document.querySelectorAll('[data-crane]').forEach(el=>el.onclick=()=>cranePress(Number(el.dataset.crane)));document.querySelectorAll('[data-close-puzzle]').forEach(el=>el.onclick=closePuzzle);
   addEventListener('keydown',e=>{keys[e.code]=true;if(e.code==='Space'){e.preventDefault();if(state.mode==='play'&&!e.repeat&&player.grounded&&!player.crouched){player.jumpVelocity=3.65;player.grounded=false;tone(120,.12,.035,'sine')}}if(e.code==='KeyV'&&!e.repeat)toggleView();if(e.code==='KeyE'&&!e.repeat)interact();if(e.code==='KeyL'&&!e.repeat)toggleDoorLock();if(e.code==='KeyF'&&state.mode==='play'&&!e.repeat){state.flash=!state.flash;tone(state.flash?390:170,.06,.025)}if(e.code==='Escape'&&state.mode==='keypad'){state.mode='play';show('#keypad',false)}else if(e.code==='Escape'&&['pressure','conveyor','ventilation','crane'].includes(state.mode))closePuzzle();else if(e.code==='Escape'&&state.mode==='play'){state.mode='paused';show('#pause')}else if(e.code==='Escape'&&state.mode==='paused'){state.mode='play';show('#pause',false)}});addEventListener('keyup',e=>keys[e.code]=false);
   addEventListener('mousemove',e=>{if(state.viewMode==='3d'&&document.pointerLockElement===activeCanvas()&&state.mode==='play')player.a=norm(player.a+e.movementX*.0024*(babylonView?.ready?-1:1));else if(state.viewMode==='2d'){const r=canvas.getBoundingClientRect();mouseX=(e.clientX-r.left)*W/r.width;mouseY=(e.clientY-r.top)*H/r.height}});for(const target of [canvas,$('#babylon-game')])target.addEventListener('click',()=>{if(state.viewMode==='3d'&&state.mode==='play'&&document.pointerLockElement!==activeCanvas())activeCanvas().requestPointerLock?.()});
-  render2D();requestAnimationFrame(loop);
+  const initial2D=ensurePhaserView();if(!initial2D.ready)render2D();requestAnimationFrame(loop);
 })();
